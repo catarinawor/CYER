@@ -1,0 +1,10 @@
+
+-Try to retrieve CWT recoveries between 2009 and 2015 for one stock but multiple fisheries
+
+-calculate confidence intervals for nominal CYER (no AEQ)
+
+-then expand for AEQ CYER --  but assuming AEQ rates are known (i.e. survival and maturation rates are known perfectly)
+
+- try to figure out how to incorporate uncertainty in AEQ
+
+

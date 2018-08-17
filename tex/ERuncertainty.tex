@@ -1,0 +1,263 @@
+ \documentclass[11pt,a4paper,usenames]{article}
+
+%% Compile this with
+%% R> library(pgfSweave)
+%% R> pgfSweave
+%\usepackage[nogin]{Sweave} %way to understand R code
+\usepackage{pgf} 
+
+%look it up
+\usepackage{tikz} 
+
+% allows R code or other stuff in the figure labels
+\usepackage{subfigure} 
+
+\usepackage{color,colortbl}
+
+\usepackage[left=1.2in,right=1.2in,top=1.2in,bottom=1.2in]{geometry} 
+
+% sets the margins
+\usepackage{fancyhdr} 
+\usepackage{setspace} 
+\usepackage{indentfirst} 
+\usepackage{titlesec} 
+\usepackage{natbib} 
+\usepackage{sectsty}
+\usepackage{listings}
+\usepackage[section]{placeins}
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{float}
+\usepackage[hyphens,obeyspaces]{url}
+
+
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{longtable}
+\usepackage{pdflscape}
+
+\newcommand{\lang}{\textsf} 
+
+%
+\newcommand{\code}{\texttt} 
+\newcommand{\pkg}{\texttt} 
+\newcommand{\ques}[1]{{\bf\large#1}} 
+\newcommand{\eb}{\\
+\nonumber} 
+
+
+%% The following is used for tables of equations.
+\newcounter{saveEq} 
+\def\putEq{\setcounter{saveEq}{\value{equation}}} 
+\def\getEq{\setcounter{equation}{\value{saveEq}}} 
+\def 
+\tableEq{ 
+
+% equations in tables
+\putEq \setcounter{equation}{0} 
+\renewcommand{\theequation}{T\arabic{table}.\arabic{equation}} \vspace{-5mm} } 
+\expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks%  save the current one
+  \do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h\do\i\do\j%
+  \do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t%
+  \do\u\do\v\do\w\do\x\do\y\do\z\do\A\do\B\do\C\do\D%
+  \do\E\do\F\do\G\do\H\do\I\do\J\do\K\do\L\do\M\do\N%
+  \do\O\do\P\do\Q\do\R\do\S\do\T\do\U\do\V\do\W\do\X%
+  \do\Y\do\Z}
+
+
+\def\normalEq{ 
+
+% renew normal equations
+\getEq 
+\renewcommand{\theequation}{\arabic{section}.\arabic{equation}}}
+\newcommand{\normal}[2]{\ensuremath{N(#1,#2)}}
+
+
+\onehalfspacing 
+\definecolor{Gray}{gray}{0.9}
+
+\title{Calculation of Calendar Year Exploitation rates and associated variances}
+\author{Catarina Wor} 
+\sectionfont{
+\fontsize{12}{12}\selectfont}
+\lstset{ language={[LaTeX]TeX},
+      escapeinside={{(*@}{@*)}}, 
+       gobble=0,
+       stepnumber=1,numbersep=5pt, 
+       numberstyle={\footnotesize\color{gray}},%firstnumber=last,
+      breaklines=true,
+      framesep=5pt,
+      basicstyle=\small\ttfamily,
+      showstringspaces=false,
+      keywordstyle=\ttfamily\textcolor{blue},
+      stringstyle=\color{orange},
+      commentstyle=\color{black},
+      rulecolor=\color{gray!10},
+      breakatwhitespace=true,
+      showspaces=false,  % shows spacing symbol
+      backgroundcolor=\color{gray!15}}
+
+
+%\pgfrealjobname{pgfSweave-vignette}
+%pgfSweave-vignette
+\begin{document}
+\maketitle
+
+%\tableofcontents
+
+\section{Background}
+
+%The calendar year exploitation rates (CYER) are the base quantitity to determine exploitation rate targets for chinook salmon stocks. 
+We calculate the calendar year exploitation rates (CYERs) and associated variance estimates. We apply the methods described by \citet{bernard_estimating_1996} and extended by the \citet{pacific_salmon_commission_coded_wire_tag_workgroup_action_2008}. For the purposes of this initial analysis, we estimated the CYER and variances for the Harrison Chinook stock, for the years between 2009 and 2015.
+
+
+\section{Data processing}
+
+All the data described below were pasted as values in excel and saved into .csv files. Subsequently the data was imported into R for processing. Datasets were combined for calculation of harvest rates. 
+%I tried using the function ``read_excel from the ``readxl'' package but I kept running into problems with R erroneously interpreting numerical values as factors. 
+
+
+\subsection{Escapement data}
+
+Escapement data was provided by Chuck Parken in a spreadsheet named \path{Harrison River Escapement CWT Data 1984-2017_16Jul2018.xlsx}. Most of the data used in this analysis was extracted from the spreadsheet \path{Harrison - Escapement CWT Data}. Including data on escapement estimates, tag recoveries, tag decoding status, tag codes, adipose fin clipped status and other. 
+
+
+%A detailed description of all the data in the \path{Harrison - Escapement CWT Data} spreadsheet is given in \path{HarrisonEscapementCWTData.pdf} and a
+An overview of the data collection methods used to produce the escapement data is given in \citet{parken_estimation_2006}. Escapement estimates are segregated by sex because of varying sampling probabilities experienced by fish of different sizes, with jacks having much lower sampling rates than other groups. The spreadsheet also contained additional information on Peterson tagging experiments, proportions of adipose fin clipped fish and and coded-wire tags recoveries.  One correction was made to this spreadsheet: In 2013, the spawner estimate was inconsistent across tag codes, with the ``no data'' category indicating that one additional fish was present. This row was set equal to the other rows for the purposes of this analysis. 
+
+ This excel file also contained information regarding tag codes used for Canadian stocks in spreadsheet \path{Cdn CWTs for ERA in 2018}. This information was used to determine fish age, stock and  release years. 
+
+
+
+\subsection{Catch data}
+Catch data was provided by Nick Komick and Erika Anderson (need to talk to them to check database name and more specific details). The catch information was given in the excel file \path{HarrisonChinook2009-2015v2.xlsx}. In this file the data is split in two spreadsheets:  \path{Catch (2009 to 2015)} and \path{Harrison Recs (2009 to 2015)}. \path{Catch (2009 to 2015)}  contains the total catches for all fisheries in BC that recovered Harrison river tags ({\color{red}Is that true? Check with Nick}). The \path{Harrison Recs (2009 to 2015)} spreadsheet contains information on all Harrison tags recoveries.
+
+The catch and fishery recovery data was processed following a few steps:
+%The \path{Harrison Recs (2009 to 2015)} spreadsheet was combined with the information from \path{Cdn CWTs for ERA in 2018} to generate tag specific information regarding the release year, stock, and age of fish at capture. 
+
+\begin{itemize}
+  \item Combine the tag recovery information with tag code specification to determine the release year, stock, and age of fish at capture.
+  \item Eliminate any data for which there were no information on identifying variable (i.e., \path{STS_ID}) or sample rate information (i.e., \path{CWT_estimate} is missing). These are data with insufficient or non existent sampling . ({\color{red}How would that affect final harvest rates? would that lead to underestimation because some catch is being ignored? - I'm still unsure about it.})
+  \item Aggregate number of tags recovered by unique \path{STS_ID}, year, fishery and period of the year.
+  \item Combine data from recoveries and total catches by \path{STS_ID}. 
+  \item Remove data from all fisheries that did not include any (Harrison) tags. 
+\end{itemize}
+
+
+
+\section{Uncertainty calculations}
+
+
+\subsection{Model}
+
+The model equations and variable definitions are given in this section.
+
+\begin{table}[h!]
+  \begin{center}
+    \caption{Variable definition.}
+    \label{tab:table1}
+    \begin{tabular}{l p{6.cm} c} % <-- Alignments: 1st column left, 2nd middle and 3rd right, with vertical lines in between
+     Notation & Parameter & spreadsheet/function name\\
+      \hline
+      \rowcolor{Gray}
+      $i $& index for strata & \path{fishery}\\
+      $y $& index for year & \path{Year} \\
+      \rowcolor{Gray}
+      $j $& index for age & \path{Age}\\
+      $M_{ijy}$ & number of tags recovered in each strata at each age and year& \path{obs_tag$Mij}\\
+      \rowcolor{Gray}
+      $\lambda_{iy}$ &decoding rate of CWT in each strata and year&\path{lambdaphi$lambdai}\\
+      $\phi_{iy}$ & fraction of catch that is inspected for CWT in each strata and year&\path{lambdaphi$phi}\\
+      \rowcolor{Gray}
+      $\theta_{j}$ & proportion of each cohort that is tagged with CWTs - assume all fish are tagged and estimate exploitation rate of tagged cohort only and year &\path{thetaj}\\
+      $G(N_{i})$ &squared cv of the catch in each strata and year &\path{GNi}\\
+      \rowcolor{Gray}
+      $G(p_{ijy})$&squared cv for the probability that a fish caught in stratum i has a tag from cohort j&\\
+      $r_{ijy}$&number of (tagged) fish harvested in stratum i from cohort j &\\
+      \rowcolor{Gray}
+      $T_{iy}$&harvest from several cohorts at stratum i&\\
+      $cv(T_{y})$&cv of annual catch - may be derived from $var(T_{iy})$ if measure across strata are independent&\\
+    \end{tabular}
+  \end{center}
+\end{table}
+
+%\begin{align}
+%r_{ijy}&=\frac{M_{ijy}}{\lambda_{iy}\cdot \phi_{iy} \cdot \theta_{j}}
+%\end{align}
+The exploitation rates computation was split in three steps: (i) computation of harvest by strata and age (\path{calc_rij()} and eqs. 1-3), (ii) computation of annual catches by strata (all ages) (\path{calc_Ti()} and eqs. 4-5), and (iii) computation of exploitation rates (\path{calc_CYER()} and eqs. 6-7).  
+
+\begin{align}
+r_{ijy}&=\frac{M_{ijy}}{\lambda_{iy}\cdot \phi_{iy} \cdot \theta_{j}}\\
+G(p_{ijy}) &=1-\frac{\phi_{iy}\cdot\theta_{j}}{M_{ijy}}\\
+var(r_{ijy})&=r_{ijy}^2\cdot (G(p_{ijy})+G(N_{i})-G(p_{ijy})\cdot G(N_{i}))
+\end{align}
+
+\begin{align}
+T_{iy}&=\sum^{j}{r_{ijy}}\\
+var(T_{iy})&=\sum^{j}{r_{ijy}}+2\cdot \sum_j\sum_{k<j}(r_{ijy}\cdot r_{iky})\cdot G(N_{i})
+\end{align}
+
+
+\begin{align}
+ER_{iy}&=\frac{T_{iy}}{\sum_{i}{T_{iy}}}\\
+var(ER_{iy})&={ER_{iy}}^{2} \cdot \left(\frac{var(T_{iy})}{{T_{iy}}^2} + \frac{(\sum^{i}{T_{iy}\cdot cv(T)})^2}{\sum^{i}{T_{iy}}^2} \right) 
+\end{align}
+
+
+\subsection{Results}
+
+The Harrison stock CYERs were calculated based on escapement data and BC fisheries. Some of the assumptions of this analysis are listed below.
+
+\begin{itemize}
+\item Assumed that the coefficient of variation (CV) for all catch/escapement ($T_{iy}$) is set to 0.1. The true standard deviation was available for some of the fisheries. 
+\item Assumed that the proportion of tagged fish is 1.0 and perfectly known (var=0). This implies that only tagged fish harvest is considered - Should have no impact on ER estimates for the indicator stocks.
+\item The number of tags per strata and age $M_{ijy}$ was not transformed into adults equivalents. This feature is yet to be implemented. 
+\end{itemize}
+
+
+In order to demonstrate the vulnerability of the CYER methods to the inclusion of different sources of data, we produced CYERs with and without the escapement data in the denominator of the exploitation rates calculations. CYER dramatically increase when escapement data is not considered (figs. \ref{BCCYER} and \ref{BCCYERnoesc}). When escapement data is not considered, both magnitude and trends in exploitation rates are affected (figs. \ref{BCCYER} and \ref{BCCYERnoesc}). 
+
+%\begin{landscape}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[scale=.48]{../figs/BC_CYER}
+  \caption{Calendar year exploitation rates (CYER) for Harrison river stock based on escapement data and BC fisheries}
+\label{BCCYER}
+\end{figure}
+%\end{landscape}
+
+%\begin{landscape}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[scale=.48]{../figs/no_esc_CYER}
+  \caption{Calendar year exploitation rates (CYER) for Harrison river stock based on and BC fisheries data, only}
+\label{BCCYERnoesc}
+\end{figure}
+%\end{landscape}
+
+
+
+\section{Future steps}
+
+\begin{itemize}
+\item{Review, review review.}
+\item{Retrieve real cv for catch data ({\color{red} Dawn/Nick?}) -- Already have CV for escapement data.}
+\item{Identify how the Adult Equivalent adjustment may affect affect estimates.}
+\item{Discuss ways to loosen the assumptions listed above. }
+\item{Simulation based confidence intervals.}
+\item{Suggestions?}
+\end{itemize}
+
+
+\bibliographystyle{apa} 
+\bibliography{CYER.bib}
+
+
+\end{document}
+
+
+
+

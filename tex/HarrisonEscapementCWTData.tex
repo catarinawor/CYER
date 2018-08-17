@@ -1,0 +1,231 @@
+ \documentclass[11pt,a4paper,usenames]{article}
+
+%% Compile this with
+%% R> library(pgfSweave)
+%% R> pgfSweave
+%\usepackage[nogin]{Sweave} %way to understand R code
+\usepackage{pgf} 
+
+%look it up
+\usepackage{tikz} 
+
+% allows R code or other stuff in the figure labels
+\usepackage{subfigure} 
+
+\usepackage{color}
+
+\usepackage[left=1.2in,right=1.2in,top=1.2in,bottom=1.2in]{geometry} 
+
+% sets the margins
+\usepackage{fancyhdr} 
+\usepackage{setspace} 
+\usepackage{indentfirst} 
+\usepackage{titlesec} 
+\usepackage{natbib} 
+\usepackage{sectsty}
+\usepackage{listings}
+\usepackage[section]{placeins}
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{float}
+\usepackage[hyphens]{url}
+
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{longtable}
+\usepackage{pdflscape}
+
+\newcommand{\lang}{\textsf} 
+
+%
+\newcommand{\code}{\texttt} 
+\newcommand{\pkg}{\texttt} 
+\newcommand{\ques}[1]{{\bf\large#1}} 
+\newcommand{\eb}{\\
+\nonumber} 
+
+
+%% The following is used for tables of equations.
+\newcounter{saveEq} 
+\def\putEq{\setcounter{saveEq}{\value{equation}}} 
+\def\getEq{\setcounter{equation}{\value{saveEq}}} 
+\def 
+\tableEq{ 
+
+% equations in tables
+\putEq \setcounter{equation}{0} 
+\renewcommand{\theequation}{T\arabic{table}.\arabic{equation}} \vspace{-5mm} } 
+\expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks%  save the current one
+  \do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h\do\i\do\j%
+  \do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t%
+  \do\u\do\v\do\w\do\x\do\y\do\z\do\A\do\B\do\C\do\D%
+  \do\E\do\F\do\G\do\H\do\I\do\J\do\K\do\L\do\M\do\N%
+  \do\O\do\P\do\Q\do\R\do\S\do\T\do\U\do\V\do\W\do\X%
+  \do\Y\do\Z}
+
+
+\def\normalEq{ 
+
+% renew normal equations
+\getEq 
+\renewcommand{\theequation}{\arabic{section}.\arabic{equation}}}
+\newcommand{\normal}[2]{\ensuremath{N(#1,#2)}}
+
+
+\onehalfspacing 
+
+
+\title{Processing of the harrison escapement data}
+\author{Catarina Wor} 
+\sectionfont{
+\fontsize{12}{12}\selectfont}
+\lstset{ language={[LaTeX]TeX},
+      escapeinside={{(*@}{@*)}}, 
+       gobble=0,
+       stepnumber=1,numbersep=5pt, 
+       numberstyle={\footnotesize\color{gray}},%firstnumber=last,
+      breaklines=true,
+      framesep=5pt,
+      basicstyle=\small\ttfamily,
+      showstringspaces=false,
+      keywordstyle=\ttfamily\textcolor{blue},
+      stringstyle=\color{orange},
+      commentstyle=\color{black},
+      rulecolor=\color{gray!10},
+      breakatwhitespace=true,
+      showspaces=false,  % shows spacing symbol
+      backgroundcolor=\color{gray!15}}
+
+
+%\pgfrealjobname{pgfSweave-vignette}
+%pgfSweave-vignette
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Background}
+
+This document is aimed at documenting the data processing described in the excel file ``Harrison River Escapement CWT Data 1984-2017.xlsx''. This spreadsheet includes data on escapement counts, mark-recapture and CWT recoveries for the Harrison River Chinook salmon stock. 
+
+This document is organized by tab description. Each section corresponds to the  description of the data and equations included in one tab in the spreadsheet.
+
+\section{Harrison - Escapement CWT data}
+ 
+ This tab contains information regarding the Peterson tagging program, as well as counts of adipose fin clipped fish (referred to as: AFC fish) and recoveries of coded wire tags (CWTs). Changes in sampling methodology over time are indicated by differences in data available for each year (i.e. differnt columns containing data). Table \ref{tab:cwtdat} lists the columns, data type, and any equations that might be associated with the columns.
+
+
+\begin{landscape}
+\begin{longtable}{p{.5cm} p{4.cm}| p{2.5cm}| p{7.0cm} | p{5.5cm} } 
+\caption{Description of data by column and symbol}\\
+\label{tab:cwtdat} 
+\small
+ &Column name & symbol & formula &comments\\
+ \hline
+%
+A&River        & -    & -      & river name - recovery location\\\hline 
+%
+B&Spawning Year& $SY$ & -      & year in which the tag was recovered\\\hline 
+%
+C&Tagcode      & $tg$ & -      & identifier for CWT tags or indication of failure 
+to decode: no data, no pin or lost pin\\\hline 
+%
+D&Brood Year   & $BY$ & -      & year in which fish was released as indicated by $tg$\\\hline 
+%
+E&Age          & $a$  & $SY-BY$& Age of fish\\\hline 
+%
+F&Location     & -    & -      & hatchery or natural \\\hline 
+%
+G&Sex          & $s$  & -      & Indication of male, female, jacks or unsexed adults\\\hline 
+%
+H&Stratum      & -    & -      & all are set to ``Whole  River''\\\hline 
+%
+I&Number of Live AFC fish CWT sampled at application& $nAFCapp_{s}^{cwt}$ &   & AFC fish that were culled at application phase to increase CWT sample size - counts start in year 2014\\\hline 
+%
+J&Number of Live AFC fish Peterson tagged&$nAFCapp_{s}^{ptrsn}$ &  & AFC fish marked with Peterson tags and released\\\hline 
+%
+K&Number AFC Dead Pitched in Recovery Stratum (no Peterson tag)&$nAFC^{dead}_{s}$ &  &\color{red} AFC fish retrieved post spawning-  may or may not have CWT or Peterson tag\\\hline 
+%
+L&Total AFC Sampled in Stratum& $nAFC_s$ &  & \color{red} Is this a proxy for the sample of the spawning population?\\\hline 
+%
+M&Number AFC Heads Sampled from Stratum (application)& $h^{app}_{s}$ & - & Subset of $nAFC_s$ sampled for CWT presence at application \\\hline 
+%
+%
+N&Number AFC Heads Sampled from Stratum (recovery)&$h^{rec}_{s}$&  &Subset of $nAFC_s$ sampled for CWT presence at recovery\\\hline 
+%
+O&Number AFC Heads Sampled from Stratum (application and recovery)& $h_s$& $h^{app}_{s}+h^{rec}_{s}$&\color{red} Subset of $nAFC_s$ sampled for CWT presence (?) \\\hline 
+%
+P&Sample Rate& $\phi_s$ &$\frac{h_s}{NAFC_s}$ &proportion of fish examined for presence of CWT \\\hline 
+%
+Q&\# CWTs observed at application & $m^{app}_{s,tg}$ & & \color{red} How are the CWT observed? are these a subset of the heads sampled?\\\hline 
+%
+R&\# CWTs Observed at Recovery & $m^{rec}_{s,tg}$ & &recovery of Peterson tags\\\hline 
+%
+S&Total Number of CWTs Observed& $m_{s,tg}$ &$m^{app}_{s,tg}+m^{rec}_{s,tg}$&\\\hline 
+%
+T&Number of Peterson-tagged Fish at Application Examined for Mark Status in Stratum&$pt^{app}_{s}$&&\\\hline
+%
+U&Number of Fish Without Peterson Tags Examined for Mark Status at Application& $nopt^{app}_{s}$ &&\color{red} how do these relate to the number of observed CWT and the number of heads sampled? Are these fish examined just for AFC? Or for CWT as well?\\\hline 
+%
+V&Number of Fish Without Peterson Tags Examined for Mark Status at Recovery&$nopt^{rec}_{s}$&&\color{red} same questions as above\\\hline 
+%
+W&Total Number of Fish Without Peterson Tags Examined for Mark Status &$nopt_{s}$&$nopt^{app}_{s}+nopt^{rec}_{s}$&\\\hline 
+%
+X&Total Number of Fish  Examined for Mark Status in Stratum&$Sample_s$&$nAFCapp_{s}^{cwt}+pt^{app}_{s}+nopt_{s}$& \color{red} is this the sample size?\\\hline 
+%
+Y&Proportion of AFC fish in Stratum&$\gamma_{s}$&$nAFC_s/Sample_s$&\\\hline 
+%
+Z&Variance of Proportion&$Var(\gamma_{s})$&$\frac{\gamma_{s}\cdot(1-\gamma_{s}}{Sample_s-1})\cdot(1-(\frac{Sample_s}{N_{s}}))$&Variance of Proportion of AFC fish in Stratum\\\hline 
+%
+AA&Number of CWTs Estimated&$M_{s,tg}$&$m_{s,tg}\cdot\frac{1}{\phi_s}$&\\\hline 
+%
+AB&Number Estimated (adj for no data)&$M_{s,tg}^{adj}$& $\frac{M_{s,tg}}{\sum^{tg}{M_{s,tg\in{ok}}}}\cdot M_{s,tg\in{lp}}+ \frac{M_{s,tg}}{\sum^{tg}{M_{s,tg\in{(ok,np)}}}}\cdot M_{s,tg\in{nd}}+M_{s,tg}$&adjusted from lost pin, no pin and no data\\\hline 
+%
+AC&Variance of Number Estimated&$Var(M_{s,tg})$&$\frac{M_{tg}\cdot(1-\phi_s)\cdot(1+{CV(AFC_{s})}^2)}{\phi_s}+{M_{s,tg}}^2 \cdot {CV(AFC_{s})}^2 $&\\\hline 
+%
+AD&CV of number estimated CWTs in stratum&$CV(M_{s,tg})$&$\frac{\sqrt{Var(M_{s,tg})}}{M_{s,tg}}$&\\\hline 
+%
+AE&Number of AFC fish in Stratum& $NAFC_s$ &$\gamma_{s}\cdot N_{s} $&\\\hline 
+%
+AF&Variance of total number of AFC fish in stratum&$Var(NAFC_s)$&$Var(\gamma_{s})\cdot {N_{s}}^2+Var(N_{s}) \cdot {\gamma_{s}}^2 - Var(\gamma_{s})\cdot Var(N_{s})$ &\\\hline 
+%
+AG&CV of number AFC fish in stratum&$CV(NAFC_{s})$&$\frac{\sqrt{Var(NAFC_{s})}}{NAFC_s}$&\\\hline 
+%
+AH&Spawner Estimate&$S_s$&&\\\hline 
+%
+AI&Variance of spawner estimate&$Var(S_s)$&&\\\hline 
+%
+AJ&Total number of fish in Stratum&$N_{s}$&$S_{s}+nopt^{app}_{s}$&\\\hline 
+%
+AK&Variance of total number of fish in stratum&$Var(N_{s})$&$Var(S_s)$&\\\hline 
+%
+AL&CV of number fish in stratum&$CV(N_{s})$&$\frac{\sqrt{Var(N_{s})}}{N_{s}}$&\\\hline 
+%
+AM&Indicator Stock Tag Code&&all yes&\\\hline 
+%
+AN&ADCWT?&&all ``N''&\color{red} ???\\\hline 
+%
+AO&Brood Year&&recovered from table of CWT codes&\\\hline 
+%
+AP&Age&&recovered from table of CWT codes&\\\hline 
+%
+AQ&CWT Stock&&recovered from table of CWT codes&\\\hline 
+\hline
+%\end{tabular}
+\end{longtable}
+\end{landscape}
+
+%\bibliographystyle{cell} 
+%\bibliography{report.bib}
+
+
+\end{document}
+
+
+
+
+
+%fn+control+alt+del for clean up!
