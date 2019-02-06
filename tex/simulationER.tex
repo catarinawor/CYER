@@ -79,7 +79,7 @@
 \onehalfspacing 
 \definecolor{Gray}{gray}{0.9}
 
-\title{Calculation of Calendar Year Exploitation rates and associated variances}
+\title{Calculation of Calendar Year Exploitation rates and simulation based variances}
 \author{Catarina Wor} 
 \sectionfont{
 \fontsize{12}{12}\selectfont}
@@ -108,15 +108,18 @@
 
 %\tableofcontents
 
+
 \section{Background}
 
-%The calendar year exploitation rates (CYER) are the base quantitity to determine exploitation rate targets for chinook salmon stocks. 
-We calculate the calendar year exploitation rates (CYERs) and associated variance estimates. We apply the methods described by \citet{bernard_estimating_1996} and extended by the \citet{pacific_salmon_commission_coded_wire_tag_workgroup_action_2008}. For the purposes of this initial analysis, we estimated the CYER and variances for the Harrison Chinook stock, for theBC fisheries in the years between 2009 and 2015.
+%The calendar year exploitation rates (CYER) are the base quantitity to determine exploitation rate targets for chinook salmon stocks.
+
+
+We calculate the calendar year exploitation rates (CYERs) and associated variance estimates using analytical and simulation based methods. The analytical methods are described by \citet{bernard_estimating_1996} and extended by the \citet{pacific_salmon_commission_coded_wire_tag_workgroup_action_2008}. For the purposes of this analysis, we limited the analysis to the the Harrison Chinook stock, for the BC fisheries, and in the years between 2009 and 2015, only.
 
 
 \section{Data processing}
 
-All the data described below were pasted as values in excel and saved into .csv files. Subsequently the data was imported into R for processing. Datasets were combined for calculation of harvest rates. 
+All the data described below were pasted as values in excel and saved into .csv files. Subsequently the data was imported into R for processing. Datasets for escapement and recoveries were combined for calculation of exploitation rates. 
 %I tried using the function ``read_excel from the ``readxl'' package but I kept running into problems with R erroneously interpreting numerical values as factors. 
 
 
@@ -147,14 +150,15 @@ The total catch and fisheries recoveries data were processed following a few ste
   \item Remove data from all fisheries that did not capture any (Harrison) tags. 
 \end{itemize}
 
-In addition, the catch data was reclassified into Individual stock based management (ISBM) and Aggregate Abundance based management (AABM) fisheries. This grouping was made based on spatiotemporal information available for most catches. Uncertainty exists, however, regarding some of the catch that was reported for the aggregate "West Coast of Vancouver Island" (WCVI). the WCVI catch can be either classified as AABM or ISBM depending on exact location and time of the year as defined in the Pacific Salmon Treaty \citep{pacific_salmon_commission_pacific_2014}. Unfortunately, the data available to us at this point did not include the detail necessary to appropriately split those catches. For the purposes of this preliminary analysis, all the WCVI catch was grouped under AABM.  Future iterations of this work should include finer catch resolution and allow for the appropriate differentiation of WCVI AABM and ISBM fisheries. 
-
-\section{Uncertainty calculations}
+In addition, the catch data was reclassified into Individual Stock Based Management (ISBM) and Aggregate Abundance based management (AABM) fisheries. This grouping was made based on spatiotemporal information available for most catches. Uncertainty exists, however, regarding some of the catch that was reported for the aggregate "West Coast of Vancouver Island" (WCVI). The WCVI catch can be either classified as AABM or ISBM depending on exact location and time of the year as defined in the Pacific Salmon Treaty \citep{pacific_salmon_commission_pacific_2014}. Unfortunately, the data available to us at this point did not include the detail necessary to appropriately split those catches. For the purposes of this preliminary analysis, all the WCVI catch was grouped under AABM.  Future iterations of this work should include finer catch resolution and allow for the appropriate differentiation of WCVI AABM and ISBM fisheries. 
 
 
-\subsection{Model}
+\section{CYER and Uncertainty calculations}
 
-In order to calculate the CYER estimates, as well as the confidence intervals, we used the equations provided by \citet{bernard_estimating_1996} and \citet{pacific_salmon_commission_coded_wire_tag_workgroup_action_2008} - eqs 5.5 and 5.6. The model equations and variable definitions are reproduced in this section. We also updated and standardized model notation. We use the notation described for a wild stock caught in recreational fisheries because these formulation collapse to the other fisheries/stocks categories when the variance components associate with $G(N_{i})$, $G(p_{ijy})$ and $G(\theta_{j})$ are set to zero. 
+
+\subsection{Analytical approach}
+
+The analytical approach relied on the methods described by \citet{bernard_estimating_1996} and \citet{pacific_salmon_commission_coded_wire_tag_workgroup_action_2008} - eqs 5.5 and 5.6. The model equations and variable definitions are reproduced in this section. We also updated and standardized model notation. We use the notation described for a wild stock caught in recreational fisheries because these formulation collapse to the other fisheries/stocks categories when the variance components associate with $G(N_{i})$, $G(p_{ijy})$ and $G(\theta_{j})$ are set to zero. 
 
 \begin{table}
   \begin{center}
@@ -168,23 +172,24 @@ In order to calculate the CYER estimates, as well as the confidence intervals, w
       $y $& index for year & \path{Year} \\
       \rowcolor{Gray}
       $j $& index for age & \path{Age}\\
+      $N_{iy}$ & catch in each strata and year &\path{Ni}\\
+      \rowcolor{Gray}
       $M_{ijy}$ & number of tags recovered in each strata at each age and year& \path{obs_tag$Mij}\\
-      \rowcolor{Gray}
       $\lambda_{iy}$ &decoding rate of CWT in each strata and year&\path{lambdaphi$lambdai}\\
+      \rowcolor{Gray}
       $\phi_{iy}$ & fraction of catch that is inspected for CWT in each strata and year&\path{lambdaphi$phi}\\
-      \rowcolor{Gray}
       $\theta_{j}$ & proportion of each cohort that is tagged with CWTs - assume all fish are tagged and estimate exploitation rate of tagged cohort only and year &\path{thetaj}\\
+      \rowcolor{Gray}
       $G(\theta_{j})$ &squared cv of proportion of each cohort that is tagged with CWTs - set to zero &\path{Gthetaj}\\
-      \rowcolor{Gray}
       $G(N_{iy})$ &squared cv of the catch in each strata and year &\path{GNi}\\
+      \rowcolor{Gray}
       $G(p_{ijy})$&squared cv for the probability that a fish caught in stratum i has a tag from cohort j&\\
-      \rowcolor{Gray}
       $r_{ijy}$&number of (tagged) fish harvested in stratum i from cohort j &\\
+      \rowcolor{Gray}
       $T_{iy}$&harvest from several cohorts at stratum i&\\
-      \rowcolor{Gray}
       $ER_{iy}$ &exploitation rates by year and stratum&\\
-      $var(ER_{iy})$ &variance of exploitation rates by year and stratum&\\
       \rowcolor{Gray}
+      $var(ER_{iy})$ &variance of exploitation rates by year and stratum&\\
       $95\% CI(ER_{iy})$& 95\% confidence intervals by exploitation rates&\\
       %$cv(T_{y})$&cv of annual catch - may be derived from $var(T_{iy})$ if measure across strata are independent&\\
     \end{tabular}
@@ -197,6 +202,7 @@ In order to calculate the CYER estimates, as well as the confidence intervals, w
 Computation of exploitation rates was split into three steps: (i) computation of harvest by strata and age (\path{calc_rij()} and eqs. 1-3), (ii) computation of annual catches by strata (all ages) (\path{calc_Ti()} and eqs. 4-5), and (iii) computation of exploitation rates (\path{calc_CYER()} and eqs. 6-\ref{erci}) and confidence intervals.  For the calculation of the confidence intervals of the exploitation rates, we used the normal approximation (eq. \ref{erci}). However, this approximation allow confidence intervals to exceed 1 which is impossible in reality. 
 
 \begin{align}
+\label{rijy}
 r_{ijy}&=\frac{M_{ijy}}{\lambda_{iy}\cdot \phi_{iy} \cdot \theta_{j}}\\
 G(p_{ijy}) &=1-\frac{\phi_{iy}\cdot\theta_{j}}{M_{ijy}}\\
 var(r_{ijy})&= r_{ijy}^2\cdot (G(p_{ijy})+G(N_{i})+G(\theta_{j})-G(\theta_{j})\cdot G(N_{iy})-G(\theta_{j})\cdot G(p_{ijy})\nonumber\\
@@ -205,12 +211,14 @@ var(r_{ijy})&= r_{ijy}^2\cdot (G(p_{ijy})+G(N_{i})+G(\theta_{j})-G(\theta_{j})\c
 
 
 \begin{align}
+\label{Tiy}
 T_{iy}&=\sum^{j}{r_{ijy}}\\
 var(T_{iy})&=\sum^{j}{var(r_{ijy})}+2\cdot \sum_j\sum_{k<j}(r_{ijy}\cdot r_{iky})\cdot G(N_{iy})
 \end{align}
 
 
 \begin{align}
+\label{ERiy}
 ER_{iy}&=\frac{T_{iy}}{\sum_{i}{T_{iy}}}\\
 var(ER_{iy})&={ER_{iy}}^{2} \cdot \left(\frac{var(T_{iy})}{{T_{iy}}^2} + \frac{\sum^{i}{var(T_{iy})}}{\sum^{i}{T_{iy}}^2}\right) \\
 95\% CI(ER_{iy})&=ER_{iy} \pm 1.96\cdot \sqrt{var(ER_{iy})}
@@ -218,8 +226,33 @@ var(ER_{iy})&={ER_{iy}}^{2} \cdot \left(\frac{var(T_{iy})}{{T_{iy}}^2} + \frac{\
 \end{align}
 
 
-\subsection{Results}
+\subsection{Simulation approach}
 
+The estimates of total catches and exploitation rates are the same as the one used in the previous above (Eqs. \ref{rijy}, \ref{Tiy}, and \ref{ERiy}.  the confidence intervals, however are produced by assuming that the sampling process follows a series of statistical distributions with parameters equal to the observed values. In all the equations below the \~ is used to indicate simulated quantities
+
+Catch error was assumed to ne log-normally distributed:
+
+\begin{align}
+\widetilde{N_{iy}} = N_{iy}\cdot e^{\varepsilon_{iy}}\\
+\varepsilon_{iy}\sim \mathcal{N}\left(0,\sqrt{G(N_{iy})}\right)
+\end{align}
+
+Sampling error was assumed to follow a binomial distributtion (catches was either samples or not sampled. )
+
+\begin{align}
+\widetilde{n_{iy}} \sim  Binom(N_{iy}\cdot\phi_{iy},\phi_{iy})
+\end{align}
+Where $N_{iy}\cdot\phi_{iy}$ indicate the sample size and $\phi_{iy}$  is the sample rate. 
+
+
+If the sample was simulated to be positive, then a hypergeometric distribution was applied to add error associated with presence of tagged fish in the sample.
+
+Once the number of tagged fish was generated, binomial error was added to indicate if a tag was decoded or not. 
+
+
+\section{Results}
+
+\subsection{Analytical approach}
 The Harrison stock CYERs were calculated based on escapement data and BC fisheries. Some of the assumptions of this analysis are listed below.
 
 \begin{itemize}
@@ -235,9 +268,18 @@ The Harrison stock CYERs were calculated based on escapement data and BC fisheri
 \begin{figure}[htbp]
   \centering
   \includegraphics[scale=.48]{../figs/treatyBC_CYER}
-  \caption{Calendar year exploitation rates (CYER) for Harrison river stock based on escapement data and BC fisheries grouped by ISBM and AABM}
+  \caption{Calendar year exploitation rates (CYER) for Harrison river stock based on escapement data and BC fisheries grouped by ISBM and AABM. Confidence intervals generated by analytical solution. }
 \label{BCCYER}
 \end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[scale=.48]{../figs/sim_CYER}
+  \caption{Calendar year exploitation rates (CYER) for Harrison river stock based on escapement data and BC fisheries grouped by ISBM and AABM and confidence interval generated by simulation.}
+\label{BCCYER}
+\end{figure}
+
+
 %\end{landscape}
 
 %\begin{landscape}

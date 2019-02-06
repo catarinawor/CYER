@@ -33,6 +33,20 @@ statweek<-read.csv("../data/statweek.csv")
 PFMA_codes<-read.csv("../data/PFMAclassification_month.csv", na.string= c("NA",""," "))
 #PFMA_codes_recs<-read.csv("../data/PFMAclassification_month_recs.csv", na.string= c("NA",""," "))
 
+summary(catches)
+summary(recs)
+summary(har_esc)
+summary(statweek)
+summary(PFMA_codes)
+
+head(catches)
+head(recs)
+#add month category to catches and recoveries
+length(unique(recs$CWT_ESTIMATE[!is.na(recs$RECS_STS_ID)]))
+length(unique(res3$CWT_ESTIMATE.y))
+length(unique(res3$CWT_ESTIMATE.x))
+length(unique(res3$CWT_ESTIMATE.x))
+
 
 
 catches$month<-statweek$month[match(catches$PERIOD_ID,statweek$Statweek)]
@@ -90,7 +104,8 @@ catches<-catches[-which(is.na(catches$CWT_ESTIMATE)),]
 obs_tags<-aggregate(recs$TAG_CODE,list(recs$RECS_YEAR,recs$STRATA_NAME,recs$BroodYear,recs$Stock,recs$Age,recs$PERIOD_NAME),length)
 names(obs_tags)<-c("Year","fishery","BY","Stock","Age","PERIOD_NAME","Mij")
 obs_tags$timeareastrata <-paste(obs_tags$fishery,obs_tags$PERIOD_NAME)
-summary(obs_tags)
+obs_tags$group<-PFMA_codes$Classification[match(obs_tags$fishery,PFMA_codes$Strata.name)]
+head(obs_tags)
 
 #summarize individual recoveries by STS_ID, fishery,year and time
 recssum<-aggregate(recs$OBSERVED_HEADS,list(recs$RECS_STS_ID,recs$RECS_YEAR,recs$STRATA_ID,
@@ -98,8 +113,12 @@ recssum<-aggregate(recs$OBSERVED_HEADS,list(recs$RECS_STS_ID,recs$RECS_YEAR,recs
 names(recssum)<-c("STS_ID","Year","STRATA_ID","STRATA_NAME","RECS_PERIOD_TYPE_ID","RECS_PERIOD_ID","PERIOD_NAME","OBSERVED_HEADS" )
 recssum$timeareastrata<-paste(recssum$STRATA_NAME,recssum$PERIOD_NAME)
 
+head(recs)
+
 recsrepeat<-aggregate(recs[,"CWT_ESTIMATE"],list(recs$RECS_STS_ID,recs$RECS_YEAR,recs$STRATA_ID,
 										recs$STRATA_NAME,recs$PERIOD_TYPE_ID,recs$PERIOD_ID, recs$PERIOD_NAME),unique)
+
+
 recssum$CWT_ESTIMATE<-(recsrepeat$x)
 
 res2 <- full_join(catches, recssum, by=c('STS_ID'='STS_ID', 'STS_YEAR'='Year','STRATA_ID'='STRATA_ID',
@@ -107,25 +126,34 @@ res2 <- full_join(catches, recssum, by=c('STS_ID'='STS_ID', 'STS_YEAR'='Year','S
 										'PERIOD_ID'='RECS_PERIOD_ID', 'PERIOD_NAME'='PERIOD_NAME'#,'CWT_ESTIMATE'='CWT_ESTIMATE'
 										))
 res2$timeareastrata <-paste(res2$STRATA_NAME,res2$PERIOD_NAME)
+dim(res2)
 
 
-#filter for only fisheries in which tagshave been recovered.
+
+#filter for only fisheries in which tags have been recovered.
 res3<-res2[which(!is.na(res2$OBSERVED_HEADS)),]
 head(res3)
 summary(res3)
 
 tottag<-NULL
-tothead<-NULL
+sample_all<-NULL
 for(a in 1:nrow(res3)){
 	tottag[a]<-sum(c(res3$LOST_TAGS[a],res3$UNREADABLE_TAGS[a],res3$UNRESOLVED_TAGS[a],res3$KNOWN_TAGS[a]),na.rm=T)
-	tothead[a]<-sum(c(res3$LOST_TAGS[a],res3$NO_TAGS[a],res3$UNREADABLE_TAGS[a],res3$UNRESOLVED_TAGS[a],res3$KNOWN_TAGS[a]),na.rm=T)
+	sample_all[a]<-sum(c(res3$SAMPLE_TOTAL[a],res3$SPORT_MARK_SAMPLE_TOTAL[a]),na.rm=T)
 }
 
 
+res3$CATCH_TOTAL
+
 GNirec<-aggregate(tottag,list(res3$STS_YEAR,res3$timeareastrata,res3$Classification),function(x){return(0.1^2)})
 names(GNirec)<-c("year","strata","group","GNi" )
-head(res3)
-dim(har_esc)
+dim(GNirec)
+dim(res3)
+#join fisheries and escapement data
+#dfcat<-data.frame(timeareastrata=c(as.character(res3$timeareastrata),as.character(har_esc$Sex)),STS_YEAR=c(res3$STS_YEAR,har_esc$Spawning_Year))
+
+#process escapement data
+#mij=#  n decoded cwt by stratum and age
 
 esctag<-aggregate(har_esc$Total_Number_CWT_Observed[har_esc$Tagcode!="No Pin"&har_esc$Tagcode!="no data"],
 		by=list(Age=har_esc$Age[har_esc$Tagcode!="No Pin"&har_esc$Tagcode!="no data"],
@@ -139,6 +167,7 @@ ProportionAFCfishStratum<-har_esc$Total_AFC_Sampled_Stratum/har_esc$Total_Number
 
 NumberAFCfishStratum<-har_esc$Total_Number_Fish_Stratum*ProportionAFCfishStratum
 
+####This is the portion that I think is wrong - what is the total sample of CWT fish and what is the total number of CWT escapement.  
 SampleRate<-har_esc$Total_Number_AFC_Heads_Sampled_Stratum/(NumberAFCfishStratum)
 
 
@@ -151,7 +180,6 @@ GNiesc<-aggregate(har_esc$CV_Number_Fish_Stratum^2,list(har_esc$Spawning_Year,ha
 names(GNiesc)<-c("year","strata","GNi" )
 GNiesc$group<-"escapement"
 GNi<-rbind(GNirec,GNiesc)
-dim(GNi)
 #=======================================================================================
 #produce quantities to be used in function
 
@@ -164,39 +192,40 @@ obstag<-data.frame(Age=c(obs_tags$Age,esctag$Age),
 #decoding rate of CWTs
 
 dec_tags_esc<-aggregate(har_esc$Total_Number_CWT_Observed[har_esc$Tagcode!="No Pin"&har_esc$Tagcode!="no data"],
-		by=list(Year=har_esc$Spawning_Year[har_esc$Tagcode!="No Pin"&har_esc$Tagcode!="no data"],
-			stratum=har_esc$Sex[har_esc$Tagcode!="No Pin"&har_esc$Tagcode!="no data"]),sum)
-all_tags_esc<-aggregate(har_esc$Total_Number_CWT_Observed,by=list(Year=har_esc$Spawning_Year,strata=har_esc$Sex),sum)
+		by=list(strata=har_esc$Sex[har_esc$Tagcode!="No Pin"&har_esc$Tagcode!="no data"],
+			Year=har_esc$Spawning_Year[har_esc$Tagcode!="No Pin"&har_esc$Tagcode!="no data"]),sum)
+all_tags_esc<-aggregate(har_esc$Total_Number_CWT_Observed,by=list(strata=har_esc$Sex,Year=har_esc$Spawning_Year),sum)
 dim(all_tags_esc)
 
+names(har_esc)
 
-dim(all_tags_esc)
+lambdai_esc<-data.frame(lambdai=dec_tags_esc$x/all_tags_esc$x, Year=dec_tags_esc$Year,strata=dec_tags_esc$stratum,fishery="escapement",group="escapement")
+names(lambdai_esc)
 
-lambdai_esc<-data.frame(lambdai=dec_tags_esc$x/all_tags_esc$x, Year=dec_tags_esc$Year,strata=dec_tags_esc$stratum,group="escapement")
 
 #lambdai_esc[match(har_esc$Spawning_Year,lbyrs)]
-
+#####parei aqui
 names(res3)
+summary(res3)
 
-rec<-aggregate(res3$KNOWN_TAGS/tottag,by=list(Year=res3$STS_YEAR,strata=res3$timeareastrata,group=res3$Classification),unique)
-dim(rec)
-unique(res3$STRATA_NAME)
 
-lambdai_rec<-data.frame(lambdai=rec$x, Year=rec$Year,strata=as.character(rec$strata),group=rec$group)
+
+lambdai_rec<-aggregate(data.frame(catch_total=res3$"CATCH_TOTAL",lambda=res3$KNOWN_TAGS/tottag,sample_all),by=list(strata=res3$timeareastrata,Year=res3$STS_YEAR,fishery=res3$STRATA_NAME,strata=res3$timeareastrata,group=res3$Classification),unique)
+names(lambdai_rec)
+lambdai_rec$cv_catch<-0.1
 
 lambdaphi<-rbind(lambdai_rec,lambdai_esc)
-names(lambdaphi)
-dim(lambdaphi)
-head(lambdaphi)
 
-har_esc$group="escapement"
+dim(lambdaphi)
+summary(dfcat)
 #phii = Fraction of catch that is inspected for CWT
 #names(har_esc)TODO: figure out why sample rate is weird in 2013
-phi_esc <- aggregate(SampleRate,list(Year=har_esc$Spawning_Year,strata=as.character(har_esc$Sex),group=har_esc$group),unique) 
-phi_rec <- aggregate(1/res3$CWT_ESTIMATE.y,by=list(Year=res3$STS_YEAR,strata=res3$timeareastrata,group=res3$Classification),unique)
+phi_esc <- as.numeric(aggregate(SampleRate,list(strata=har_esc$Sex,Year=har_esc$Spawning_Year),unique)$x)
+phi_rec <- aggregate(1/res3$CWT_ESTIMATE.x,by=list(strata=res3$timeareastrata,Year=res3$STS_YEAR,fishery=res3$STRATA_NAME),unique)$x
+
+lambdaphi$phi <- c(phi_rec,phi_esc)
 
 
-lambdaphi$phi <- c(phi_rec$x,phi_esc$x)
 
 
 #==========================================================================
@@ -211,18 +240,23 @@ B<-list(obs_tag=obstag,
 
 myrij<-calc_rij(B)
 
+#head(myryij)
+#summary(myrij)
+
+
+dim(myrij)
+
+
+#myryij<-aggregate(myrij[,c("rij","Var_rij")],list(strata=myrij$fishery,year=myrij$yr),mysum)
 myryij<-myrij
 
-names(myryij)<-c("rij","year","age","stratatime","strata","Var_rij","Gpij" )
+names(myryij)<-c("rij","year","age","stratatime","finestrata","strata","Var_rij","Gpij" )
 
 A<-list(rij=myryij,
 	GNi=GNi) #assume 10% cv of catches
 
 
 myTi<-calc_Ti(A)
-names(myTi)
-dim(myTi)
-
 
 Z<-list(dfrij=myryij,dfTi=myTi,agespec=FALSE)
 cyerdf<-calc_CYER(Z)
@@ -236,7 +270,6 @@ p<-p+geom_line(aes(x=year,y=CYER,color=as.factor((strata))))
 p<-p+geom_ribbon(aes(x=year,ymin=CYERlo,ymax=CYERhi,fill=as.factor(strata)),alpha=.4)
 p<-p+ facet_wrap(~strata, scales="free")
 p<-p+ theme_bw(16) +labs(  color = "Strata", fill="Strata")
-p<-p+ylab("CYER or escapement")
 p
 ggsave(paste("../figs/treatyBC_CYER.pdf", sep=""), plot=p)
 
